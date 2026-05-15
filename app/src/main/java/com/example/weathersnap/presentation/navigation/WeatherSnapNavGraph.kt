@@ -64,7 +64,12 @@ fun WeatherSnapNavGraph() {
 
         composable(Screen.Camera.route) {
             CameraScreen(
-                onCaptureClick = {
+                onCaptureClick = { imagePath, originalSize, compressedSize ->
+                    reportDraftViewModel.setCapturedImage(
+                        imagePath = imagePath,
+                        originalSize = originalSize,
+                        compressedSize = compressedSize
+                    )
                     navController.popBackStack()
                 },
                 onCloseClick = {

@@ -13,10 +13,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material.icons.filled.Air
-import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -24,16 +22,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ButtonDefaults
+import coil.compose.AsyncImage
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.io.File
+
 
 @Composable
 fun CreateReportScreen(
@@ -164,11 +164,36 @@ fun CreateReportScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = draftState.imagePath ?: "No photo captured yet",
-                        color = Color(0xFF607D8B)
-                    )
+                    if (draftState.imagePath != null) {
+                        AsyncImage(
+                            model = File(draftState.imagePath),
+                            contentDescription = "Captured weather photo",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Text(
+                            text = "No photo captured yet",
+                            color = Color(0xFF607D8B)
+                        )
+                    }
                 }
+            }
+
+            if (draftState.imagePath != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Original size: ${formatFileSize(draftState.originalImageSize)}",
+                    fontSize = 12.sp,
+                    color = Color(0xFF607D8B)
+                )
+
+                Text(
+                    text = "Compressed size: ${formatFileSize(draftState.compressedImageSize)}",
+                    fontSize = 12.sp,
+                    color = Color(0xFF607D8B)
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -187,7 +212,9 @@ fun CreateReportScreen(
                     imageVector = Icons.Default.CameraAlt,
                     contentDescription = null
                 )
+
                 Spacer(modifier = Modifier.padding(4.dp))
+
                 Text("Capture Photo")
             }
 
@@ -222,7 +249,9 @@ fun CreateReportScreen(
                     imageVector = Icons.Default.Save,
                     contentDescription = null
                 )
+
                 Spacer(modifier = Modifier.padding(4.dp))
+
                 Text("Save Report")
             }
 
@@ -238,5 +267,18 @@ fun CreateReportScreen(
                 Text("Back")
             }
         }
+    }
+}
+
+private fun formatFileSize(size: Long?): String {
+    if (size == null || size <= 0L) return "Not available"
+
+    val kb = size / 1024.0
+    val mb = kb / 1024.0
+
+    return if (mb >= 1) {
+        String.format("%.2f MB", mb)
+    } else {
+        String.format("%.2f KB", kb)
     }
 }
