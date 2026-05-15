@@ -1,0 +1,388 @@
+package com.example.weathersnap.presentation.weather
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Air
+import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.weathersnap.domain.model.CitySuggestion
+
+@Composable
+fun WeatherScreen(
+    onCreateReportClick: () -> Unit,
+    onReportsClick: () -> Unit,
+    viewModel: WeatherViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF4FAFF))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(18.dp)
+        ) {
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "WeatherSnap",
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF0B4F8A)
+            )
+
+            Text(
+                text = "Search live weather and create local reports",
+                fontSize = 14.sp,
+                color = Color(0xFF5B6B7A),
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
+            Spacer(modifier = Modifier.height(22.dp))
+
+            OutlinedTextField(
+                value = uiState.cityQuery,
+                onValueChange = viewModel::onCityQueryChange,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = {
+                    Text("Search city")
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null
+                    )
+                },
+                trailingIcon = {
+                    if (uiState.cityQuery.isNotEmpty()) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = null,
+                            modifier = Modifier.clickable {
+                                viewModel.onCityQueryChange("")
+                            }
+                        )
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp)
+            )
+
+            Text(
+                text = "Enter more than 2 letters to start city suggestions.",
+                fontSize = 12.sp,
+                color = Color(0xFF3478B8),
+                modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+            )
+
+            AnimatedVisibility(
+                visible = uiState.isLoadingSuggestions
+            ) {
+                Row(
+                    modifier = Modifier.padding(top = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Searching cities...",
+                        fontSize = 13.sp,
+                        color = Color(0xFF5B6B7A)
+                    )
+                }
+            }
+
+            AnimatedVisibility(
+                visible = uiState.suggestions.isNotEmpty()
+            ) {
+                SuggestionsCard(
+                    suggestions = uiState.suggestions,
+                    onSuggestionClick = viewModel::onCitySelected
+                )
+            }
+
+            AnimatedVisibility(
+                visible = uiState.suggestionError != null
+            ) {
+                Text(
+                    text = uiState.suggestionError.orEmpty(),
+                    color = Color(0xFFD32F2F),
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(top = 10.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            WeatherInfoCard(
+                cityName = uiState.selectedCity?.name ?: "Select a city",
+                location = uiState.selectedCity?.let {
+                    listOfNotNull(it.state, it.country).joinToString(", ")
+                } ?: "Weather details will appear here"
+            )
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            Button(
+                onClick = onCreateReportClick,
+                enabled = uiState.selectedCity != null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0878D8),
+                    disabledContainerColor = Color(0xFFB7D4EA)
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Create Report",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = onReportsClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                shape = RoundedCornerShape(18.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Article,
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Reports",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SuggestionsCard(
+    suggestions: List<CitySuggestion>,
+    onSuggestionClick: (CitySuggestion) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 8.dp)
+        ) {
+            suggestions.forEach { suggestion ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            onSuggestionClick(suggestion)
+                        }
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = Color(0xFF607D8B)
+                    )
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Text(
+                        text = suggestion.displayName,
+                        fontSize = 14.sp,
+                        color = Color(0xFF263238)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeatherInfoCard(
+    cityName: String,
+    location: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(26.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            Color(0xFF0984E3),
+                            Color(0xFF0B65C2)
+                        )
+                    )
+                )
+                .padding(22.dp)
+        ) {
+            Column {
+                Text(
+                    text = cityName,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+
+                Text(
+                    text = location,
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = "--°C",
+                            fontSize = 52.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+
+                        Text(
+                            text = "Weather not loaded yet",
+                            fontSize = 16.sp,
+                            color = Color.White
+                        )
+
+                        Text(
+                            text = "Select a suggestion first",
+                            fontSize = 13.sp,
+                            color = Color.White.copy(alpha = 0.85f),
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+
+                    Text(
+                        text = "⛅",
+                        fontSize = 70.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                HorizontalDivider(
+                    color = Color.White.copy(alpha = 0.35f)
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    WeatherStatItem(
+                        icon = Icons.Default.WaterDrop,
+                        label = "Humidity",
+                        value = "--%"
+                    )
+
+                    WeatherStatItem(
+                        icon = Icons.Default.Air,
+                        label = "Wind Speed",
+                        value = "-- km/h"
+                    )
+
+                    WeatherStatItem(
+                        icon = Icons.Default.Speed,
+                        label = "Pressure",
+                        value = "-- hPa"
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeatherStatItem(
+    icon: ImageVector,
+    label: String,
+    value: String
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color.White,
+            modifier = Modifier.size(24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = Color.White.copy(alpha = 0.85f)
+        )
+
+        Text(
+            text = value,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+    }
+}
