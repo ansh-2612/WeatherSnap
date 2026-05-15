@@ -14,7 +14,16 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,10 +37,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.weathersnap.domain.model.CitySuggestion
+import com.example.weathersnap.domain.model.WeatherInfo
 
 @Composable
 fun WeatherScreen(
-    onCreateReportClick: () -> Unit,
+    onCreateReportClick: (WeatherInfo) -> Unit,
     onReportsClick: () -> Unit,
     viewModel: WeatherViewModel = hiltViewModel()
 ) {
@@ -111,7 +121,9 @@ fun WeatherScreen(
                         modifier = Modifier.size(18.dp),
                         strokeWidth = 2.dp
                     )
+
                     Spacer(modifier = Modifier.width(8.dp))
+
                     Text(
                         text = "Searching cities...",
                         fontSize = 13.sp,
@@ -143,17 +155,21 @@ fun WeatherScreen(
             Spacer(modifier = Modifier.height(18.dp))
 
             WeatherInfoCard(
-                cityName = uiState.selectedCity?.name ?: "Select a city",
-                location = uiState.selectedCity?.let {
-                    listOfNotNull(it.state, it.country).joinToString(", ")
-                } ?: "Weather details will appear here"
+                weatherInfo = uiState.weatherInfo,
+                selectedCity = uiState.selectedCity,
+                isLoading = uiState.isLoadingWeather,
+                error = uiState.weatherError
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
             Button(
-                onClick = onCreateReportClick,
-                enabled = uiState.selectedCity != null,
+                onClick = {
+                    uiState.weatherInfo?.let { weatherInfo ->
+                        onCreateReportClick(weatherInfo)
+                    }
+                },
+                enabled = uiState.weatherInfo != null,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),
@@ -167,7 +183,9 @@ fun WeatherScreen(
                     imageVector = Icons.Default.Add,
                     contentDescription = null
                 )
+
                 Spacer(modifier = Modifier.width(8.dp))
+
                 Text(
                     text = "Create Report",
                     fontSize = 16.sp,
@@ -188,7 +206,9 @@ fun WeatherScreen(
                     imageVector = Icons.Default.Article,
                     contentDescription = null
                 )
+
                 Spacer(modifier = Modifier.width(8.dp))
+
                 Text(
                     text = "Reports",
                     fontSize = 16.sp,
@@ -248,9 +268,19 @@ private fun SuggestionsCard(
 
 @Composable
 private fun WeatherInfoCard(
-    cityName: String,
-    location: String
+    weatherInfo: WeatherInfo?,
+    selectedCity: CitySuggestion?,
+    isLoading: Boolean,
+    error: String?
 ) {
+    val cityName = weatherInfo?.cityName ?: selectedCity?.name ?: "Select a city"
+
+    val location = weatherInfo?.location
+        ?: selectedCity?.let {
+            listOfNotNull(it.state, it.country).joinToString(", ")
+        }
+        ?: "Weather details will appear here"
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(26.dp),
@@ -285,69 +315,115 @@ private fun WeatherInfoCard(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            text = "--°C",
-                            fontSize = 52.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                when {
+                    isLoading -> {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(vertical = 32.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(28.dp),
+                                strokeWidth = 3.dp
+                            )
 
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Text(
+                                text = "Loading weather...",
+                                fontSize = 16.sp,
+                                color = Color.White
+                            )
+                        }
+                    }
+
+                    error != null -> {
                         Text(
-                            text = "Weather not loaded yet",
+                            text = error,
                             fontSize = 16.sp,
-                            color = Color.White
-                        )
-
-                        Text(
-                            text = "Select a suggestion first",
-                            fontSize = 13.sp,
-                            color = Color.White.copy(alpha = 0.85f),
-                            modifier = Modifier.padding(top = 4.dp)
+                            color = Color.White,
+                            modifier = Modifier.padding(vertical = 32.dp)
                         )
                     }
 
-                    Text(
-                        text = "⛅",
-                        fontSize = 70.sp
-                    )
-                }
+                    else -> {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = weatherInfo?.let {
+                                        "${it.temperature.toInt()}°C"
+                                    } ?: "--°C",
+                                    fontSize = 52.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                                Text(
+                                    text = weatherInfo?.condition ?: "Weather not loaded yet",
+                                    fontSize = 16.sp,
+                                    color = Color.White
+                                )
 
-                HorizontalDivider(
-                    color = Color.White.copy(alpha = 0.35f)
-                )
+                                Text(
+                                    text = if (weatherInfo != null) {
+                                        "Live Open-Meteo data"
+                                    } else {
+                                        "Select a suggestion first"
+                                    },
+                                    fontSize = 13.sp,
+                                    color = Color.White.copy(alpha = 0.85f),
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
 
-                Spacer(modifier = Modifier.height(18.dp))
+                            Text(
+                                text = getWeatherEmoji(weatherInfo?.condition),
+                                fontSize = 70.sp
+                            )
+                        }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    WeatherStatItem(
-                        icon = Icons.Default.WaterDrop,
-                        label = "Humidity",
-                        value = "--%"
-                    )
+                        Spacer(modifier = Modifier.height(20.dp))
 
-                    WeatherStatItem(
-                        icon = Icons.Default.Air,
-                        label = "Wind Speed",
-                        value = "-- km/h"
-                    )
+                        HorizontalDivider(
+                            color = Color.White.copy(alpha = 0.35f)
+                        )
 
-                    WeatherStatItem(
-                        icon = Icons.Default.Speed,
-                        label = "Pressure",
-                        value = "-- hPa"
-                    )
+                        Spacer(modifier = Modifier.height(18.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            WeatherStatItem(
+                                icon = Icons.Default.WaterDrop,
+                                label = "Humidity",
+                                value = weatherInfo?.let {
+                                    "${it.humidity}%"
+                                } ?: "--%"
+                            )
+
+                            WeatherStatItem(
+                                icon = Icons.Default.Air,
+                                label = "Wind Speed",
+                                value = weatherInfo?.let {
+                                    "${it.windSpeed.toInt()} km/h"
+                                } ?: "-- km/h"
+                            )
+
+                            WeatherStatItem(
+                                icon = Icons.Default.Speed,
+                                label = "Pressure",
+                                value = weatherInfo?.let {
+                                    "${it.pressure.toInt()} hPa"
+                                } ?: "-- hPa"
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -384,5 +460,20 @@ private fun WeatherStatItem(
             fontWeight = FontWeight.Bold,
             color = Color.White
         )
+    }
+}
+
+private fun getWeatherEmoji(condition: String?): String {
+    return when (condition) {
+        "Clear Sky" -> "☀️"
+        "Partly Cloudy" -> "⛅"
+        "Cloudy" -> "☁️"
+        "Foggy" -> "🌫️"
+        "Drizzle" -> "🌦️"
+        "Rain" -> "🌧️"
+        "Rain Showers" -> "🌦️"
+        "Snow" -> "❄️"
+        "Thunderstorm" -> "⛈️"
+        else -> "⛅"
     }
 }

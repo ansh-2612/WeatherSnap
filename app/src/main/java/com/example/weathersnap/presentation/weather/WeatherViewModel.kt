@@ -22,11 +22,14 @@ class WeatherViewModel @Inject constructor(
     val uiState: StateFlow<WeatherUiState> = _uiState.asStateFlow()
 
     private var searchJob: Job? = null
+    private var weatherJob: Job? = null
 
     fun onCityQueryChange(query: String) {
         _uiState.value = _uiState.value.copy(
             cityQuery = query,
             selectedCity = null,
+            weatherInfo = null,
+            weatherError = null,
             suggestionError = null
         )
 
@@ -74,7 +77,36 @@ class WeatherViewModel @Inject constructor(
             cityQuery = city.displayName,
             suggestions = emptyList(),
             suggestionError = null,
-            isLoadingSuggestions = false
+            isLoadingSuggestions = false,
+            weatherInfo = null,
+            weatherError = null,
+            isLoadingWeather = true
         )
+
+        fetchWeather(city)
+    }
+
+    private fun fetchWeather(city: CitySuggestion) {
+        weatherJob?.cancel()
+
+        weatherJob = viewModelScope.launch {
+            val result = repository.getCurrentWeather(city)
+
+            result
+                .onSuccess { weather ->
+                    _uiState.value = _uiState.value.copy(
+                        weatherInfo = weather,
+                        isLoadingWeather = false,
+                        weatherError = null
+                    )
+                }
+                .onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        weatherInfo = null,
+                        isLoadingWeather = false,
+                        weatherError = error.message ?: "Unable to load weather"
+                    )
+                }
+        }
     }
 }
