@@ -1,15 +1,18 @@
 package com.example.weathersnap.presentation.create_report
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Save
@@ -34,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.io.File
 
-
 @Composable
 fun CreateReportScreen(
     draftState: ReportDraftUiState,
@@ -44,20 +46,22 @@ fun CreateReportScreen(
     onBackClick: () -> Unit
 ) {
     val weather = draftState.weatherInfo
+    val scrollState = rememberScrollState()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF4FAFF))
+            .imePadding()
+            .navigationBarsPadding()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(18.dp),
-            verticalArrangement = Arrangement.Top
+                .verticalScroll(scrollState)
+                .padding(horizontal = 18.dp)
+                .padding(top = 24.dp, bottom = 28.dp)
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-
             Text(
                 text = "Create Report",
                 fontSize = 28.sp,
@@ -116,7 +120,7 @@ fun CreateReportScreen(
 
                             Text(
                                 text = "${weather.temperature.toInt()}°C • ${weather.condition}",
-                                fontSize = 28.sp,
+                                fontSize = 26.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
@@ -153,7 +157,7 @@ fun CreateReportScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(170.dp),
+                    .height(150.dp),
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White
@@ -225,11 +229,12 @@ fun CreateReportScreen(
                 onValueChange = onNotesChange,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(120.dp),
+                    .height(110.dp),
                 placeholder = {
                     Text("Write notes about current weather...")
                 },
-                shape = RoundedCornerShape(18.dp)
+                shape = RoundedCornerShape(18.dp),
+                maxLines = 4
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -266,6 +271,8 @@ fun CreateReportScreen(
             ) {
                 Text("Back")
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }

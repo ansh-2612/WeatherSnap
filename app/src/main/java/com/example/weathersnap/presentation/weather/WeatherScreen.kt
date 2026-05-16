@@ -23,6 +23,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -80,12 +81,16 @@ fun WeatherScreen(
                 onValueChange = viewModel::onCityQueryChange,
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = {
-                    Text("Search city")
+                    Text(
+                        text = "Search city",
+                        color = Color(0xFF78909C)
+                    )
                 },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = null
+                        contentDescription = null,
+                        tint = Color(0xFF0B4F8A)
                     )
                 },
                 trailingIcon = {
@@ -93,6 +98,7 @@ fun WeatherScreen(
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = null,
+                            tint = Color(0xFF0B4F8A),
                             modifier = Modifier.clickable {
                                 viewModel.onCityQueryChange("")
                             }
@@ -100,7 +106,16 @@ fun WeatherScreen(
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color(0xFF102A43),
+                    unfocusedTextColor = Color(0xFF102A43),
+                    cursorColor = Color(0xFF0878D8),
+                    focusedBorderColor = Color(0xFF0878D8),
+                    unfocusedBorderColor = Color(0xFFB0BEC5),
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                )
             )
 
             Text(
