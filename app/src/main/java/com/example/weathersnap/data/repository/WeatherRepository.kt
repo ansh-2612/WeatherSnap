@@ -7,6 +7,7 @@ import com.example.weathersnap.domain.model.CitySuggestion
 import com.example.weathersnap.domain.model.WeatherInfo
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.example.weathersnap.data.local.DraftReportEntity
 
 @Singleton
 class WeatherRepository @Inject constructor(
@@ -108,6 +109,18 @@ class WeatherRepository @Inject constructor(
     }
 
     fun getSavedReports() = reportDao.getAllReports()
+    suspend fun saveDraft(draft: DraftReportEntity) {
+        reportDao.upsertDraft(draft)
+    }
+
+    suspend fun getDraftOnce(): DraftReportEntity? {
+        return reportDao.getDraftOnce()
+    }
+
+    suspend fun clearDraft() {
+        reportDao.clearDraft()
+    }
+
 
     private fun getWeatherCondition(code: Int?): String {
         return when (code) {

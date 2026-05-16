@@ -57,6 +57,7 @@ fun WeatherSnapNavGraph() {
                     )
                 },
                 onBackClick = {
+                    reportDraftViewModel.discardDraft()
                     navController.popBackStack()
                 }
             )

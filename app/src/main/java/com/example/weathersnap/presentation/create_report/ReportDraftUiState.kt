@@ -7,6 +7,6 @@ data class ReportDraftUiState(
     val notes: String = "",
     val imagePath: String? = null,
     val originalImageSize: Long? = null,
-    val compressedImageSize: Long? = null
+    val compressedImageSize: Long? = null,
+    val isDraftRestored: Boolean = false
 )
-
